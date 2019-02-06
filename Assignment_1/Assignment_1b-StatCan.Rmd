@@ -1,0 +1,172 @@
+---
+title: "Assignment 1b"
+output: html_notebook
+---
+
+Question 1. Part b)
+Try using various visualizations on the Census Income Data Set (also known as AdultUCI)
+Census Income Dataset to learn from this data and find interesting patterns and/or results.
+Present your graphical results together with a written summary of findings.
+
+
+After downloading the dataset from the given website (https://archive.ics.uci.edu/ml/datasets/census+income), we must first load it into R. We will do this using the Tidyverse packages and the read_csv() function. Note that the data does not come with column headers, so we will provide those.
+
+```{r}
+library(tidyverse)
+data <- read_csv("C:/Users/Zixin Nie/Documents/Introduction_to_Data_Science/Assignment_1/adult_data.csv")
+colnames(data) <- c("Age", "Work_class", "fnlweight", "Education", "Education_years", "Marital_status", "Occupation", "Family_relationship", "Race", "Sex", "Capital_gains", "Capital_losses", "Work_hours_per_week", "Native_country", "Income")
+```
+
+Let us take a look at the structure of the census data.
+
+```{r}
+str(data)
+```
+
+In this dataset the bulk of the variables we have are discrete categorical variables. Continuous variables like "Capital_gains" and "Capital_losses" are highly skewed, since not very many people will have enough investments for those two variables to have any effect. 
+
+```{r}
+ggplot(data, aes(x = Capital_gains)) + geom_histogram() + ggtitle("Distribution of Capital Gains")
+```
+```{r}
+ggplot(data, aes(x = Capital_losses)) + geom_histogram() + ggtitle("Distribution of Capital Losses")
+```
+
+The variable "fnlweight" is a survey weight variable which has little analytic value when we are making visualizations. This leaves "Age", "Education_years", and "Work_hours_per_week" as the other continuous variables that we can look at. We expect there to be clusters in "Education_years" and "Work_hours_per_week" because most people undergo a standard number of years for their education (depending on the level they finish at), and they work a standard number of hours per week.
+
+```{r}
+ggplot(data, aes(x = Education_years)) + geom_histogram() + ggtitle("Distribution of years of education")
+```
+
+```{r}
+ggplot(data, aes(x = Work_hours_per_week)) + geom_histogram() + ggtitle("Distribution of working hours")
+```
+
+The distribution of the years of education should line up very well with the bar graph of the "Education" variable.
+
+```{r}
+data$Education <- factor(data$Education, levels = c("Preschool", "1st-4th", "5th-6th", "7th-8th", "9th", "10th", "11th", "12th", "HS-grad", "Assoc-voc", "Assoc-acdm", "Some-college", "Bachelors", "Masters", "Prof-school", "Doctorate"))
+ggplot(data, aes(x = Education)) + geom_bar() + ggtitle("Distribution of education level")
+```
+
+The age distribution should generally follow the age distribution of the population of the United States.
+```{r}
+#ggplot(data, aes(x = Age)) + geom_histogram() + ggtitle("Distribution of Ages")
+ggplot(data,aes(x=as.factor(Age),fill=Sex)) + 
+  geom_bar(data=subset(data,Sex=="Female")) + 
+  geom_bar(data=subset(data,Sex=="Male"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of Ages from Sample")
+```
+
+Our sample is unbalanced as compared with the real US population distribution (shown below).
+
+![Population Pyramid of the US, 2015. Source: US Census Bureau](/Users/Zixin Nie/Documents/Introduction_to_Data_Science/Assignment_1/US_population_pyramid.png)
+
+Our sample not only has fewer females than males, but they are also overall lower in age than the distribution present in the US population.
+
+Let us look at the distributions for the categorical variables present in our dataset. We will start with "Work_class".
+
+```{r}
+ggplot(data, aes(x = Work_class)) + geom_bar() + ggtitle("Distribution by type of employment")
+```
+
+Most people work within the private sector, as expected. Let us look at the distribution of marital status next.
+
+```{r}
+ggplot(data, aes(x = Marital_status)) + geom_bar() + ggtitle("Distribution by marital status")
+```
+
+We can take a look at the family situation as well for each of these people, to see how it lines up with marital status.
+
+```{r}
+ggplot(data, aes(x = Family_relationship)) + geom_bar() + ggtitle("Distribution by family status")
+```
+The sampled data shows many husbands, but very few wives. Perhaps this is also due to the unbalanced nature of the sample, as we have fewer females and they are of younger ages.
+
+Let us take a look at occupation next.
+```{r}
+ggplot(data, aes(x = Occupation)) + geom_bar() + ggtitle("Distribution by Occupation")
+```
+
+And finally we will look at race.
+```{r}
+ggplot(data, aes(x = Race)) + geom_bar() + ggtitle("Distribution by Race")
+```
+
+Let us construct pairwise plots for these variables using the ggpairs plot function. Again, we will only plot a sample of 10000 points, to make the graphs more readable. We will also drop the variable "fnlweight" as it is not necessary for our analysis.
+
+```{r}
+library(GGally)
+datasamp = data[sample(1:nrow(data), 10000),]
+datasamp %>% select(-one_of("fnlweight"))
+ggpairs(datasamp, cardinality_threshold = 50)
+```
+
+We will now also look at this data within GGobi, to determine if there are any other trends or clusters that can be determined.
+
+We can also create some plots looking at the distributions of every variable according to the income variable, which has two levels (>50K, <50K). 
+
+```{r}
+ggplot(data,aes(x=as.factor(Age),fill=Income)) + 
+  geom_bar(data=subset(data,Income=="<=50K")) + 
+  geom_bar(data=subset(data,Income==">50K"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of Ages by Income")
+```
+
+Most people sampled have an income of less than or equal to $50,000 per year. The distribution is also skewed, with the majority of people earning that amount being younger. For people with greater than $50,000 per yeay in income, their age distribution in more symmetric.
+
+```{r}
+ggplot(data,aes(x=as.factor(Education_years),fill=Income)) + 
+  geom_bar(data=subset(data,Income=="<=50K")) + 
+  geom_bar(data=subset(data,Income==">50K"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of Education years by Income") + xlab("Years of education")
+```
+
+As expected, people with more education generally have a higher income.
+
+```{r}
+ggplot(data,aes(x=as.factor(Marital_status),fill=Income)) + 
+  geom_bar(data=subset(data,Income=="<=50K")) + 
+  geom_bar(data=subset(data,Income==">50K"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of marital status by Income") + xlab("Marital Status")
+```
+
+Most higher-earners are married, whereas there is a plurality of lower earners who have never married. It is likely that these are younger people who have not yet married and are starting out in their careers, hence they earn less.
+
+
+```{r}
+ggplot(data,aes(x=as.factor(Race),fill=Income)) + 
+  geom_bar(data=subset(data,Income=="<=50K")) + 
+  geom_bar(data=subset(data,Income==">50K"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of Race by Income") + xlab("Race")
+```
+
+It seems for most races there are more low-income earners than high-income earners, though that is probably due to the overwhelming majority of people in the sample earning less than $50,000.
+
+
+```{r}
+ggplot(data,aes(x=as.factor(Sex),fill=Income)) + 
+  geom_bar(data=subset(data,Income=="<=50K")) + 
+  geom_bar(data=subset(data,Income==">50K"),aes(y=..count..*(-1))) + 
+  scale_y_continuous() + 
+  coord_flip() + ggtitle("Distribution of Sex by Income") + xlab("Sex")
+```
+
+It seems from our sample that far more females earn less than $50,000, as compared with males. However, this may be due to the skewed age distribution for females in our sample, where the majority of females are young.
+
+Since most of the recorded data is categorical, we do have strong clustering when one categorical variable is projected more above the others. We can see this in the following graph, where we show strong clustering due to the "Sex" variable. The left cluster corresponds to females, and the right cluster corresponds to males.
+
+![Clusters due to sex](/Users/Zixin Nie/Documents/Introduction_to_Data_Science/Assignment_1/1b_two_clear_clusters.png)
+
+When we ignore clustering that naturally occurs due to the categorical variables, and try to look for other clusters that might arise from the data, we cannot find anything. In such a situation, where we look for clusters from a mixture of different variables, without any one variable dominant, no clusters arise.
+
+![No clusters can be seen](/Users/Zixin Nie/Documents/Introduction_to_Data_Science/Assignment_1/1b_mixture_of_everything.png)
+
+A parallel coordinates plot with all the variables included is shown below:
+![Parallel Coordinates](/Users/Zixin Nie/Documents/Introduction_to_Data_Science/Assignment_1/1b_parallel_coordinates.png)
+

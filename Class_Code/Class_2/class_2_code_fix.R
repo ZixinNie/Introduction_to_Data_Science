@@ -97,59 +97,34 @@ matrix(c(heading[triple.counts[,1:3]],triple.counts[,4]), n.comb.3, 4)
 
 
 # quads
-matrix(heading[quad], n.comb.4, 5)
+
+# All unique quads
+n.comb.4 <- choose(numb,4)
+quad <- matrix(0, n.comb.4, 4)
+ind <- 1
+for (i in 1:numb) {
+  j <- i+1
+  while (j <= numb) {  # for can run 6:5 ...
+    k <- j + 1
+    while (k <= numb) { 
+      l <- k + 1
+        while(l <= numb) {
+          quad[ind, ] <- c(i,j,k,l)
+          ind <- ind + 1
+          l <- l + 1 
+        }
+      k <- k + 1
+    }
+    j <- j + 1
+  }
+}
+
+matrix(heading[quad], n.comb.4, 4)
 
 quad.counts <- matrix(0, n.comb.4, 5)
 for (i in 1:dim(quad)[1]){
-  qu
-  # All unique triples
-  n.comb.3 <- choose(numb,3)
-  triple <- matrix(0, n.comb.3, 3)
-  ind <- 1
-  for (i in 1:numb) {
-    j <- i+1
-    while (j <= numb) {  # for can run 6:5 ...
-      k <- j + 1
-      while (k <= numb) { 
-        triple[ind, ] <- c(i,j,k)
-        ind <- ind + 1
-        k <- k + 1
-      }
-      j <- j + 1
-    }
-  }
-  # triple
-  matrix(heading[triple], n.comb.3, 3)
-  
-  triple.counts <- matrix(0, n.comb.3, 4)
-  for (i in 1:dim(triple)[1]){
-    triple.counts[i,] <-c(triple[i,],sum(floor(apply(baskets[,triple[i,]],1,sum)/3)))
-  }
-  matrix(c(heading[triple.counts[,1:3]],triple.counts[,4]), n.comb.3, 4)
-  
-  # All unique quads
-  n.comb.4 <- choose(numb,4)
-  quad <- matrix(0, n.comb.4, 4)
-  ind <- 1
-  for (i in 1:numb) {
-    j <- i+1
-    while (j <= numb) {  # for can run 6:5 ...
-      k <- j + 1
-      while (k <= numb) {
-        l <- k + 1
-        while (l <= numb) { 
-          quad[ind, ] <- c(i,j,k,l)
-          ind <- ind + 1
-          l <- l + 1
-        }
-        k <- k + 1
-      }
-      j <- j + 1
-    }
-  }
-  quad.counts[i,] <-c(quad[i,],sum(floor(apply(baskets[,quad[i,]],1,sum)/4)))
+  quad.counts[i,] <- c(quad[i,],sum(floor(apply(baskets[,quad[i,]],1,sum)/4)))
 }
-
 matrix(c(heading[quad.counts[,1:4]],quad.counts[,5]), n.comb.4, 5)
 
 # Look for influences
@@ -215,7 +190,7 @@ for (i in 1:nrow(triple)){    # Run through all the triples
     }
   }
 }
-install.packages("arules")
+#install.packages("arules")
 
 library(arules)
 rules <- apriori(apply(baskets, 2, as.numeric), parameter = list(supp = 0.01, conf = 0.01, target = "rules"))

@@ -1,0 +1,96 @@
+---
+title: "Assignment 1 Q2"
+output: html_notebook
+---
+
+Refer to the dataset Census Income Data Set (also known as AdultUCI) Census Income Dataset at the UCI Machine Learning Repository with additional information on converting it to the Adult dataset for transaction processing at Adult Data Set information. Carry out association rule mining on this dataset by determining appropriate support and confidence levels and obtaining the top 10 rules.
+
+
+The AdultUCI dataset that has been preprocessed for association rule mining is available within the "arules" package. Let us load the package and load the dataset as well
+```{r}
+library(arules)
+data("Adult")
+```
+
+Let us first look at the structure of the Adult dataset.
+
+```{r}
+str(Adult)
+```
+
+We can see that the dataset has been converted from a dataframe into a transactions dataset. Transactions datasets contain three slots: data, intemInfo, and itemsetInfo. From the R documentation on the transactions data class, data is the binary incidence matrix, itemInfo contains the item labels, and itemsetInfo is a dataframe with each row being a transaction.
+
+We can view a summary of the Adult dataset using the summary function.
+
+```{r}
+summary(Adult)
+```
+
+We can view the transactions using the inspect function. Since there are over 40000 transactions recorded, we will only view the first 5.
+
+```{r}
+inspect(Adult[1:5])
+```
+
+Each transaction is this case is a combination of the different variables that we have in the original AdultUCI dataset.
+
+We can also do some visualization of the item frequencies, to get an idea of the supports for rule mining. Let us look at items that have a support of at least 25% (0.25).
+
+```{r}
+itemFrequencyPlot(Adult, support = 0.25)
+```
+
+We can also look at the items that have the highest support. Let us look at the top 10 items.
+
+```{r}
+itemFrequencyPlot(Adult, topN = 10)
+```
+
+From this we can see that most people in the dataset have no capital losses or gains, are born in the United States, are White, work in the Private sector, are Male, work full-time, have lower than $50,000/year income, are middle-aged, and are married or within a civil union.
+
+To view the transaction matrix, we can use the image function. Since we have so many transactions, it is best to take a random sample in order create a meaningful visualization.
+
+```{r}
+image(sample(Adult, 100))
+```
+
+
+We have some very heavily populated columns. Most likely those correspond to the items that had very high support (no capital gains/losses, born in the US, White).
+
+Now let us carry out association rule mining on this dataset. We will use the apriori function from the arules package. This function uses the apriori principle, that itemsets that are infrequent have subsets that are infrequent as well (which is a fairly obvious result from conditional probabilities). The goal will be to find itemsets that have high support (high number of appearances in the dataset), then identify the itemsets that have high confidence (high number of appearances for a subset within a set), and finally identify high lift (high frequency of one trait appearing given another trait appearing). Note that for each one of support, confidence, and lift, the apriori principle applies.
+
+Let us start with the default settings (support = 0.1, confidence = 0.8).
+
+```{r}
+apriori(Adult)
+```
+
+Using these settings we were able to create 6137 rules. Our goal for this assignment is to find the top 10 rules. Evidently the default settings are too lenient to discover only the top 10 rules.
+
+We know based on our initial visualizations that the top 10 items all have a support higher than 0.4. Let us try that to see if it sufficiently limits the number of rules.
+
+```{r}
+apriori(Adult, parameter = list(support = 0.4, confidence = 0.8))
+```
+
+This still gives us 169 rules. After playing with the parameters, a support of 0.8 combined with a confidence of 0.89 gives us exactly 10 rules. 
+
+```{r}
+top10rules = apriori(Adult, parameter = list(support = 0.8, confidence = 0.89))
+```
+
+Let us asses our model performance.
+
+```{r}
+summary(top10rules)
+```
+
+Our model has high support, high confidence, however the lift we see is bounded at 1. This means we did not find rules that allow us to determine increases in likelihood of one trait given some other trait. 
+
+Let us take a look at the top 10 rules, sorted by lift.
+
+```{r}
+inspect(sort(top10rules, by = "lift"))
+```
+
+Here we can see that the top 10 rules all consist of the traits no capital gains/losses, United States natives, and being White. Since the traits of no capital gains/losses and being an US native are so dominant, it would be worthwhile to remove those variables (capital gains/losses, native country) entirely, to see which other association rules become important.
